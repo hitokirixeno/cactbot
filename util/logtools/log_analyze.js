@@ -1,6 +1,7 @@
 'use strict';
 
 // TODO: add post-anonymizing `validateNames` as well
+// TODO: handle LogLine subFields properly.
 
 // canAnonymize: boolean whether this line can be anonymized
 // playerIds: map of indexes from a player id to the index of that player name
@@ -595,18 +596,6 @@ const fakePlayerNames = [
   'Dum Aloo',
 ];
 
-class NoopProcessor {
-  shouldStart(splitLine) {
-    return true;
-  }
-  shouldStop(splitLine) {
-    return false;
-  }
-  shouldSkip(splitLine) {
-    return false;
-  }
-}
-
 class ConsolePrinter {
   print(splitLine) {
     console.log(splitLine.join('|'));
@@ -806,59 +795,10 @@ class AnonymizingPrinter {
   }
 }
 
-let processLog = (lines, processor, printer) => {
-  let globalLines = [];
-  let lastLineByType = {};
-
-  let printedGlobals = false;
-  let printedLast = false;
-  let isPrinting = false;
-
-  for (let line of lines) {
-    let splitLine = line.split('|');
-
-    if (!isPrinting && processor.shouldStart(splitLine)) {
-      isPrinting = true;
-    } else if (isPrinting && process.shouldStop(splitLine)) {
-      isPrinting = false;
-      // Reset printedLast whenever we stop.
-      printedLast = false;
-    }
-
-    if (processor.shouldSkip(splitLine))
-      continue;
-
-    if (!isPrinting) {
-      if (processor.isGlobal(splitLine))
-        globalLines.push(splitLine);
-
-      if (processor.isLastInclude(splitLine))
-        lastLineByType[splitLine[0]] = splitLine;
-
-      continue;
-    }
-
-    // If we get here, we're printing something.
-    // Print the globals if this is the first thing we're printing.
-    if (!printedGlobals) {
-      for (let global of globalLines)
-        printer.print(global);
-      printedGlobals = true;
-    }
-    // If we've started again after stopping, re-print any "last" lines.
-    if (!printedLast) {
-      for (let type in lastLineByType)
-        printer.print(lastLineByType[type]);
-    }
-  }
-};
-
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     logDefinitions: logDefinitions,
-    NoopProcessor: NoopProcessor,
-    AnonymizingPrinter: AnonymizingPrinter,
     ConsolePrinter: ConsolePrinter,
-    processLog: processLog,
+    AnonymizingPrinter: AnonymizingPrinter,
   };
 }

@@ -20,6 +20,9 @@ class CollectingPrinter {
 
   print(splitLine) {
     this.lines.push(splitLine);
+
+    // TODO: uncomment this to print the anonymized line while testing.
+    // console.log(splitLine.join('|'));
   }
 
   warn(reason, splitLine) {
